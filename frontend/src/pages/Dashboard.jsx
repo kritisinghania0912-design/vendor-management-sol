@@ -2,8 +2,21 @@ import { useState, useEffect } from 'react';
 import { makeApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { riskBadge, statusBadge, paymentBadge } from '../utils/badges';
+import { CardsSkeleton, TableSkeleton } from '../components/Skeleton';
 
 const fmt = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+
+function DashboardSkeleton() {
+  return (
+    <div>
+      <CardsSkeleton count={4} />
+      <div className="two-col">
+        <TableSkeleton cols={5} rows={5} />
+        <TableSkeleton cols={5} rows={5} />
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { vendorParam, isVendor, user } = useAuth();
@@ -20,7 +33,7 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, [vendorParam]);
 
-  if (loading) return <div className="loading">Loading dashboard…</div>;
+  if (loading) return <DashboardSkeleton />;
   if (!data) return <div className="loading">Failed to load data.</div>;
 
   return (
@@ -143,12 +156,12 @@ export default function Dashboard() {
                 {Object.entries(data.vendorsByCategory || {}).map(([cat, count]) => (
                   <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 20 }}>{cat === 'Transport' ? '🚕' : cat === 'Food' ? '🥗' : '💻'}</span>
-                      <span style={{ fontWeight: 600 }}>{cat}</span>
+                      <span style={{ fontSize: 18 }} aria-hidden="true">{cat === 'Transport' ? '🚕' : cat === 'Food' ? '🥗' : '💻'}</span>
+                      <span style={{ fontWeight: 600, fontSize: 13 }}>{cat}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ height: 6, width: count * 40, background: 'var(--blue)', borderRadius: 3 }} />
-                      <span style={{ fontWeight: 700, width: 24, textAlign: 'right' }}>{count}</span>
+                      <div style={{ height: 5, width: count * 40, background: 'var(--blue)', borderRadius: 2 }} />
+                      <span style={{ fontWeight: 700, width: 24, textAlign: 'right', fontSize: 13 }}>{count}</span>
                     </div>
                   </div>
                 ))}

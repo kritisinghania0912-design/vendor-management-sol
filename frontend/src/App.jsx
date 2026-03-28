@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -14,10 +15,11 @@ function AppShell() {
   if (!user) return <Navigate to="/login" replace />;
   return (
     <div className="app-layout">
+      <a href="#main-content" className="skip-nav">Skip to main content</a>
       <Sidebar />
       <div className="main-area">
         <Header notifCount={3} />
-        <main className="page-content">
+        <main id="main-content" className="page-content">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/issues" element={<Issues />} />
@@ -34,12 +36,14 @@ function AppShell() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginGate />} />
-          <Route path="/*" element={<ProtectedRoute><AppShell /></ProtectedRoute>} />
-        </Routes>
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginGate />} />
+            <Route path="/*" element={<ProtectedRoute><AppShell /></ProtectedRoute>} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   );
 }

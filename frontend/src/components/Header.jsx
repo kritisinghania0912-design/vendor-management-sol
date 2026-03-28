@@ -28,25 +28,33 @@ export default function Header({ notifCount = 0 }) {
       </div>
 
       <div className="header-actions">
-        <button className="icon-btn" title="Notifications">
-          <span>🔔</span>
-          {notifCount > 0 && <span className="notif-dot" />}
+        <button className="icon-btn" aria-label={`Notifications${notifCount > 0 ? `, ${notifCount} unread` : ''}`}>
+          <span aria-hidden="true">🔔</span>
+          {notifCount > 0 && (
+            <span className="notif-badge" aria-hidden="true">{notifCount > 9 ? '9+' : notifCount}</span>
+          )}
         </button>
 
         <div className="profile-menu-wrap" ref={dropRef}>
-          <button className="profile-trigger" onClick={() => setDropOpen(o => !o)}>
-            <div className="avatar">{initials}</div>
+          <button
+            className="profile-trigger"
+            onClick={() => setDropOpen(o => !o)}
+            aria-haspopup="true"
+            aria-expanded={dropOpen}
+            aria-label="User menu"
+          >
+            <div className="avatar" aria-hidden="true">{initials}</div>
             <div className="profile-info">
               <span className="profile-name">{user?.name || 'User'}</span>
               <span className={roleBadgeClass}>{roleLabel}</span>
             </div>
-            <span className={`profile-caret${dropOpen ? ' open' : ''}`}>▾</span>
+            <span className={`profile-caret${dropOpen ? ' open' : ''}`} aria-hidden="true">▾</span>
           </button>
 
           {dropOpen && (
-            <div className="profile-dropdown">
+            <div className="profile-dropdown" role="menu">
               <div className="dropdown-header">
-                <div className="avatar avatar-lg">{initials}</div>
+                <div className="avatar avatar-lg" aria-hidden="true">{initials}</div>
                 <div>
                   <div className="dropdown-name">{user?.name}</div>
                   <div className="dropdown-email">{user?.email}</div>
@@ -54,18 +62,18 @@ export default function Header({ notifCount = 0 }) {
                 </div>
               </div>
               <div className="dropdown-divider" />
-              <button className="dropdown-item" onClick={() => setDropOpen(false)}>
-                <span>👤</span> Profile Settings
+              <button className="dropdown-item" role="menuitem" onClick={() => setDropOpen(false)}>
+                <span aria-hidden="true">👤</span> Profile Settings
               </button>
-              <button className="dropdown-item" onClick={() => setDropOpen(false)}>
-                <span>🔒</span> Change Password
+              <button className="dropdown-item" role="menuitem" onClick={() => setDropOpen(false)}>
+                <span aria-hidden="true">🔒</span> Change Password
               </button>
-              <button className="dropdown-item" onClick={() => setDropOpen(false)}>
-                <span>🔔</span> Notification Preferences
+              <button className="dropdown-item" role="menuitem" onClick={() => setDropOpen(false)}>
+                <span aria-hidden="true">🔔</span> Notification Preferences
               </button>
               <div className="dropdown-divider" />
-              <button className="dropdown-item danger" onClick={logout}>
-                <span>↩</span> Sign Out
+              <button className="dropdown-item danger" role="menuitem" onClick={logout}>
+                <span aria-hidden="true">↩</span> Sign Out
               </button>
             </div>
           )}

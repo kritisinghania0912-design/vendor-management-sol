@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
+import { TableSkeleton } from '../components/Skeleton';
 import { makeApi } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 const TRIP_COLS = [
   { key: 'TripID', label: 'Trip ID' },
@@ -21,6 +23,7 @@ const EMPTY_TRIP = { CarID: '', DriverID: '', EmployeeID: '', TripDate: '', Pick
 
 function TransportPulse() {
   const { vendorParam } = useAuth();
+  const toast = useToast();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -44,14 +47,21 @@ function TransportPulse() {
   const incidents = useMemo(() => trips.filter(t => t.IncidentReported === 'true').length, [trips]);
 
   async function handleSave() {
-    if (!form.CarID || !form.DriverID) return alert('Car ID and Driver ID are required.');
+    if (!form.CarID || !form.DriverID) {
+      toast('Car ID and Driver ID are required.', 'error');
+      return;
+    }
     setSaving(true);
     try {
       const api = makeApi(vendorParam);
       const row = await api.createTrip({ ...form, TripDate: form.TripDate || new Date().toISOString().slice(0, 10) });
       setTrips(p => [...p, row]); setShowModal(false); setForm(EMPTY_TRIP);
-    } catch { alert('Failed to save.'); }
-    finally { setSaving(false); }
+      toast('Trip logged successfully.', 'success');
+    } catch {
+      toast('Failed to save trip. Please try again.', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -62,8 +72,10 @@ function TransportPulse() {
         <div className="card"><div className="card-label">Incidents</div><div className={`card-value${incidents > 0 ? ' red' : ' green'}`}>{incidents}</div></div>
       </div>
       <div className="table-toolbar">
-        <input className="search-input" placeholder="Search trips…" value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="filter-select" value={filterIncident} onChange={e => setFilterIncident(e.target.value)}>
+        <div className="search-wrap">
+          <input className="search-input" placeholder="Search trips…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search trips" />
+        </div>
+        <select className="filter-select" value={filterIncident} onChange={e => setFilterIncident(e.target.value)} aria-label="Filter by incident">
           <option value="">All Trips</option>
           <option value="true">With Incident</option>
           <option value="false">No Incident</option>
@@ -72,7 +84,7 @@ function TransportPulse() {
           <button className="btn-primary" onClick={() => setShowModal(true)}>+ Add Trip</button>
         </div>
       </div>
-      {loading ? <div className="loading">Loading trips…</div> : <DataTable columns={TRIP_COLS} data={filtered} />}
+      {loading ? <TableSkeleton cols={11} rows={6} /> : <DataTable columns={TRIP_COLS} data={filtered} />}
       {showModal && (
         <Modal title="Log Trip" onClose={() => setShowModal(false)} onSave={handleSave} saving={saving}>
           <div className="form-grid">
@@ -115,6 +127,7 @@ const EMPTY_SVC = { VendorID: '', ServiceDate: '', MealType: 'Lunch', PricePerPl
 
 function FoodPulse() {
   const { vendorParam, user } = useAuth();
+  const toast = useToast();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -139,33 +152,42 @@ function FoodPulse() {
   const discrepancies = useMemo(() => services.filter(r => parseInt(r.PlatesBilledByVendor) > parseInt(r.ActualBadgesSwiped)).length, [services]);
 
   async function handleSave() {
-    if (!form.VendorID) return alert('Vendor ID is required.');
+    if (!form.VendorID) {
+      toast('Vendor ID is required.', 'error');
+      return;
+    }
     setSaving(true);
     try {
       const api = makeApi(vendorParam);
       const row = await api.createFoodService({ ...form, ServiceDate: form.ServiceDate || new Date().toISOString().slice(0, 10) });
       setServices(p => [...p, row]); setShowModal(false); setForm(EMPTY_SVC);
-    } catch { alert('Failed to save.'); }
-    finally { setSaving(false); }
+      toast('Service record saved successfully.', 'success');
+    } catch {
+      toast('Failed to save service record. Please try again.', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div>
       <div className="cards-row" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
-        <div className="card"><div className="card-label">Total Billed</div><div className="card-value" style={{fontSize:20}}>₹{totalBilled.toLocaleString('en-IN')}</div></div>
-        <div className="card"><div className="card-label">Actual (Badge)</div><div className="card-value" style={{fontSize:20}}>₹{totalActual.toLocaleString('en-IN')}</div></div>
+        <div className="card"><div className="card-label">Total Billed</div><div className="card-value" style={{fontSize:18}}>₹{totalBilled.toLocaleString('en-IN')}</div></div>
+        <div className="card"><div className="card-label">Actual (Badge)</div><div className="card-value" style={{fontSize:18}}>₹{totalActual.toLocaleString('en-IN')}</div></div>
         <div className="card"><div className="card-label">Discrepancies</div><div className={`card-value${discrepancies > 0 ? ' red' : ' green'}`}>{discrepancies}</div><div className="card-footer">services over-billed</div></div>
       </div>
       <div className="table-toolbar">
-        <input className="search-input" placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="filter-select" value={filterMeal} onChange={e => setFilterMeal(e.target.value)}>
+        <div className="search-wrap">
+          <input className="search-input" placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search service records" />
+        </div>
+        <select className="filter-select" value={filterMeal} onChange={e => setFilterMeal(e.target.value)} aria-label="Filter by meal type">
           <option value="">All Meals</option><option>Breakfast</option><option>Lunch</option><option>Snacks</option><option>Dinner</option>
         </select>
         <div className="table-toolbar-right">
           <button className="btn-primary" onClick={() => { setForm({ ...EMPTY_SVC, VendorID: user?.vendorId || '' }); setShowModal(true); }}>+ Log Service</button>
         </div>
       </div>
-      {loading ? <div className="loading">Loading…</div> : <DataTable columns={SVC_COLS} data={filtered} />}
+      {loading ? <TableSkeleton cols={9} rows={6} /> : <DataTable columns={SVC_COLS} data={filtered} />}
       {showModal && (
         <Modal title="Log Food Service" onClose={() => setShowModal(false)} onSave={handleSave} saving={saving}>
           <div className="form-grid">
@@ -217,6 +239,7 @@ const EMPTY_HW = { AssetID: '', ManufacturerDate: '', SerialNumber: '', MAC_Addr
 
 function ITPulse() {
   const { vendorParam } = useAuth();
+  const toast = useToast();
   const [subTab, setSubTab] = useState('software');
   const [software, setSoftware] = useState([]);
   const [hardware, setHardware] = useState([]);
@@ -245,8 +268,12 @@ function ITPulse() {
       if (subTab === 'software') { const r = await api.createITSoftware(formSW); setSoftware(p => [...p, r]); setFormSW(EMPTY_SW); }
       else { const r = await api.createITHardware(formHW); setHardware(p => [...p, r]); setFormHW(EMPTY_HW); }
       setShowModal(false);
-    } catch { alert('Failed to save.'); }
-    finally { setSaving(false); }
+      toast('Record saved successfully.', 'success');
+    } catch {
+      toast('Failed to save. Please try again.', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -265,7 +292,7 @@ function ITPulse() {
           <button className="btn-primary" onClick={() => setShowModal(true)}>+ Add Data</button>
         </div>
       </div>
-      {loading ? <div className="loading">Loading…</div> : (
+      {loading ? <TableSkeleton cols={7} rows={6} /> : (
         subTab === 'software' ? <DataTable columns={SW_COLS} data={software} /> : <DataTable columns={HW_COLS} data={hardware} />
       )}
       {showModal && (
@@ -319,14 +346,14 @@ export default function Pulse() {
       {isVendor ? (
         <div style={{ marginBottom: 20 }}>
           <span className="vendor-tab active" style={{ cursor: 'default' }}>
-            {user?.vendorCategory === 'Transport' ? '🚕' : user?.vendorCategory === 'Food' ? '🥗' : '💻'} {user?.vendorCategory}
+            <span aria-hidden="true">{user?.vendorCategory === 'Transport' ? '🚕' : user?.vendorCategory === 'Food' ? '🥗' : '💻'}</span> {user?.vendorCategory}
           </span>
         </div>
       ) : (
         <div className="vendor-tabs">
-          <button className={`vendor-tab${vendor === 'transport' ? ' active' : ''}`} onClick={() => setVendor('transport')}>🚕 Transport</button>
-          <button className={`vendor-tab${vendor === 'food' ? ' active' : ''}`} onClick={() => setVendor('food')}>🥗 Food</button>
-          <button className={`vendor-tab${vendor === 'it' ? ' active' : ''}`} onClick={() => setVendor('it')}>💻 IT</button>
+          <button className={`vendor-tab${vendor === 'transport' ? ' active' : ''}`} onClick={() => setVendor('transport')}><span aria-hidden="true">🚕</span> Transport</button>
+          <button className={`vendor-tab${vendor === 'food' ? ' active' : ''}`} onClick={() => setVendor('food')}><span aria-hidden="true">🥗</span> Food</button>
+          <button className={`vendor-tab${vendor === 'it' ? ' active' : ''}`} onClick={() => setVendor('it')}><span aria-hidden="true">💻</span> IT</button>
         </div>
       )}
       {vendor === 'transport' && <TransportPulse />}

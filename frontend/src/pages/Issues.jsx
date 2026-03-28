@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
+import { TableSkeleton } from '../components/Skeleton';
 import { makeApi } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { riskBadge, statusBadge, priorityBadge } from '../utils/badges';
 
 const COLUMNS = [
@@ -23,6 +25,7 @@ const EMPTY_FORM = {
 
 export default function Issues() {
   const { vendorParam, isAdmin, user } = useAuth();
+  const toast = useToast();
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -58,7 +61,10 @@ export default function Issues() {
   }), [issues, filterRisk, filterStatus, filterCat, search]);
 
   async function handleSave() {
-    if (!form.VendorID || !form.Description) return alert('Vendor ID and Description are required.');
+    if (!form.VendorID || !form.Description) {
+      toast('Vendor ID and Description are required.', 'error');
+      return;
+    }
     setSaving(true);
     try {
       const api = makeApi(vendorParam);
@@ -66,8 +72,9 @@ export default function Issues() {
       setIssues(prev => [...prev, created]);
       setShowModal(false);
       setForm(EMPTY_FORM);
+      toast('Issue raised successfully.', 'success');
     } catch {
-      alert('Failed to save issue.');
+      toast('Failed to save issue. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
@@ -105,25 +112,33 @@ export default function Issues() {
       </div>
 
       <div className="table-toolbar">
-        <input className="search-input" placeholder="Search issues…" value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="filter-select" value={filterRisk} onChange={e => setFilterRisk(e.target.value)}>
+        <div className="search-wrap">
+          <input
+            className="search-input"
+            placeholder="Search issues…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            aria-label="Search issues"
+          />
+        </div>
+        <select className="filter-select" value={filterRisk} onChange={e => setFilterRisk(e.target.value)} aria-label="Filter by risk level">
           <option value="">All Risk Levels</option>
           <option>High</option><option>Medium</option><option>Low</option>
         </select>
-        <select className="filter-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className="filter-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)} aria-label="Filter by status">
           <option value="">All Statuses</option>
           <option>Open</option><option>In-Progress</option><option>Resolved</option>
         </select>
-        <select className="filter-select" value={filterCat} onChange={e => setFilterCat(e.target.value)}>
+        <select className="filter-select" value={filterCat} onChange={e => setFilterCat(e.target.value)} aria-label="Filter by category">
           <option value="">All Categories</option>
           <option>Expiry</option><option>Discrepancy</option><option>Safety</option><option>Employee Complaint</option>
         </select>
         <div className="table-toolbar-right">
-          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{filtered.length} records</span>
+          <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>{filtered.length} records</span>
         </div>
       </div>
 
-      {loading ? <div className="loading">Loading issues…</div> : <DataTable columns={COLUMNS} data={filtered} />}
+      {loading ? <TableSkeleton cols={8} rows={6} /> : <DataTable columns={COLUMNS} data={filtered} />}
 
       {showModal && (
         <Modal title="Raise Issue" onClose={() => setShowModal(false)} onSave={handleSave} saving={saving}>

@@ -20,7 +20,7 @@ export default function Sidebar() {
   const NAV = isVendor ? VENDOR_NAV : ADMIN_NAV;
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" aria-label="Sidebar">
       <div className="sidebar-logo">
         <div className="sidebar-logo-icon">V</div>
         VendorSecure
@@ -28,12 +28,12 @@ export default function Sidebar() {
 
       {isVendor && user?.vendorCategory && (
         <div className="sidebar-vendor-chip">
-          <span>{user.vendorCategory === 'Transport' ? '🚕' : user.vendorCategory === 'Food' ? '🥗' : '💻'}</span>
+          <span aria-hidden="true">{user.vendorCategory === 'Transport' ? '🚕' : user.vendorCategory === 'Food' ? '🥗' : '💻'}</span>
           <span>{user.vendorCategory}</span>
         </div>
       )}
 
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav" aria-label="Main navigation">
         {NAV.map(({ to, label, icon }) => (
           <NavLink
             key={to}
@@ -41,7 +41,7 @@ export default function Sidebar() {
             end={to === '/'}
             className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}
           >
-            <span className="nav-icon">{icon}</span>
+            <span className="nav-icon" aria-hidden="true">{icon}</span>
             {label}
           </NavLink>
         ))}

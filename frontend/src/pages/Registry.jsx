@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
+import { TableSkeleton } from '../components/Skeleton';
 import { makeApi } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 const CAR_COLS = [
   { key: 'CarID', label: 'Car ID' },
@@ -40,6 +42,7 @@ const EMPTY_DRV = { VendorID: '', Name: '', VendorEmployeeID: '', DOB: '', Gende
 
 function TransportRegistry() {
   const { vendorParam, isAdmin, user } = useAuth();
+  const toast = useToast();
   const [subTab, setSubTab] = useState('cars');
   const [cars, setCars] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -66,8 +69,12 @@ function TransportRegistry() {
       if (subTab === 'cars') { const r = await api.createCar({ ...formCar, VendorID: formCar.VendorID || user?.vendorId }); setCars(p => [...p, r]); setFormCar(EMPTY_CAR); }
       else { const r = await api.createDriver({ ...formDrv, VendorID: formDrv.VendorID || user?.vendorId }); setDrivers(p => [...p, r]); setFormDrv(EMPTY_DRV); }
       setShowModal(false);
-    } catch { alert('Failed to save.'); }
-    finally { setSaving(false); }
+      toast('Record saved successfully.', 'success');
+    } catch {
+      toast('Failed to save. Please try again.', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -87,7 +94,7 @@ function TransportRegistry() {
           <button className="btn-primary" onClick={() => setShowModal(true)}>+ Add Asset</button>
         </div>
       </div>
-      {loading ? <div className="loading">Loading…</div> : (
+      {loading ? <TableSkeleton cols={subTab === 'cars' ? 10 : 8} rows={6} /> : (
         subTab === 'cars' ? <DataTable columns={CAR_COLS} data={cars} /> : <DataTable columns={DRV_COLS} data={drivers} />
       )}
       {showModal && (
@@ -152,6 +159,7 @@ const CATALOG_COLS = [
 
 function FoodRegistry() {
   const { vendorParam, isAdmin, user } = useAuth();
+  const toast = useToast();
   const [subTab, setSubTab] = useState('staff');
   const [staff, setStaff] = useState([]);
   const [catalog, setCatalog] = useState([]);
@@ -177,8 +185,12 @@ function FoodRegistry() {
       if (subTab === 'staff') { const r = await api.createFoodStaff({ ...formStaff, VendorID: formStaff.VendorID || user?.vendorId }); setStaff(p => [...p, r]); }
       else { const r = await api.createFoodItem({ ...formItem, VendorID: formItem.VendorID || user?.vendorId }); setCatalog(p => [...p, r]); }
       setShowModal(false);
-    } catch { alert('Failed to save.'); }
-    finally { setSaving(false); }
+      toast('Record saved successfully.', 'success');
+    } catch {
+      toast('Failed to save. Please try again.', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -197,7 +209,7 @@ function FoodRegistry() {
           <button className="btn-primary" onClick={() => setShowModal(true)}>+ Add Asset</button>
         </div>
       </div>
-      {loading ? <div className="loading">Loading…</div> : (
+      {loading ? <TableSkeleton cols={6} rows={6} /> : (
         subTab === 'staff' ? <DataTable columns={STAFF_COLS} data={staff} /> : <DataTable columns={CATALOG_COLS} data={catalog} />
       )}
       {showModal && (
@@ -247,6 +259,7 @@ const EMPTY_ASSET = { VendorID: '', AssetName: '', AssetCategory: 'Software', Ba
 
 function ITRegistry() {
   const { vendorParam, isAdmin, user } = useAuth();
+  const toast = useToast();
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -267,15 +280,19 @@ function ITRegistry() {
     try {
       const r = await api.createITAsset({ ...form, VendorID: form.VendorID || user?.vendorId });
       setAssets(p => [...p, r]); setShowModal(false); setForm(EMPTY_ASSET);
-    } catch { alert('Failed to save.'); }
-    finally { setSaving(false); }
+      toast('Asset registered successfully.', 'success');
+    } catch {
+      toast('Failed to save. Please try again.', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div>
       <div className="cards-row" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
         <div className="card"><div className="card-label">Total Assets</div><div className="card-value">{assets.length}</div></div>
-        <div className="card"><div className="card-label">Monthly AMC</div><div className="card-value" style={{fontSize:20}}>₹{monthlyAMC.toLocaleString('en-IN')}</div></div>
+        <div className="card"><div className="card-label">Monthly AMC</div><div className="card-value" style={{fontSize:18}}>₹{monthlyAMC.toLocaleString('en-IN')}</div></div>
         <div className="card"><div className="card-label">Needs Approval</div><div className={`card-value${needsApproval > 0 ? ' amber' : ' green'}`}>{needsApproval}</div></div>
       </div>
       <div className="table-toolbar">
@@ -283,7 +300,7 @@ function ITRegistry() {
           <button className="btn-primary" onClick={() => setShowModal(true)}>+ Add Asset</button>
         </div>
       </div>
-      {loading ? <div className="loading">Loading…</div> : <DataTable columns={ASSET_COLS} data={assets} />}
+      {loading ? <TableSkeleton cols={8} rows={6} /> : <DataTable columns={ASSET_COLS} data={assets} />}
       {showModal && (
         <Modal title="Register IT Asset" onClose={() => setShowModal(false)} onSave={handleSave} saving={saving}>
           <div className="form-grid">
@@ -320,9 +337,9 @@ export default function Registry() {
       </div>
       {!isVendor && (
         <div className="vendor-tabs">
-          <button className={`vendor-tab${vendor === 'transport' ? ' active' : ''}`} onClick={() => setVendor('transport')}>🚕 Transport</button>
-          <button className={`vendor-tab${vendor === 'food' ? ' active' : ''}`} onClick={() => setVendor('food')}>🥗 Food</button>
-          <button className={`vendor-tab${vendor === 'it' ? ' active' : ''}`} onClick={() => setVendor('it')}>💻 IT</button>
+          <button className={`vendor-tab${vendor === 'transport' ? ' active' : ''}`} onClick={() => setVendor('transport')}><span aria-hidden="true">🚕</span> Transport</button>
+          <button className={`vendor-tab${vendor === 'food' ? ' active' : ''}`} onClick={() => setVendor('food')}><span aria-hidden="true">🥗</span> Food</button>
+          <button className={`vendor-tab${vendor === 'it' ? ' active' : ''}`} onClick={() => setVendor('it')}><span aria-hidden="true">💻</span> IT</button>
         </div>
       )}
       {vendor === 'transport' && <TransportRegistry />}
