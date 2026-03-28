@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+frontend/.vite/
+
+# Environment / local config
+.env
+.env.local
+.env.*.local
+
+# Claude Code internal
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
