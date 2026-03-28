@@ -1,0 +1,7 @@
+VendorID,VendorCategory,CompanyName,GSTIN,Address,POC_Name,POC_Phone,POC_Email,EscalationContact,BankAccountNo,IFSC_Code,MSA_StartDate,MSA_EndDate,OnboardedBy_AdminID,AccountManager_AdminID
+V001,Transport,SwiftCabs Pvt Ltd,27AABCS1429B1ZB,"204 MG Road, Bengaluru",Ramesh Kumar,9876543210,ramesh@swiftcabs.com,ops@swiftcabs.com,1234567890,HDFC0001234,2024-01-01,2025-12-31,A001,A002
+V002,Transport,CityRide Solutions,29AADCR1234C1ZA,"12 Brigade Road, Bengaluru",Sunita Rao,9812345678,sunita@cityride.com,support@cityride.com,9876543210,ICIC0002345,2024-03-01,2025-02-28,A001,A003
+V003,Food,GreenLeaf Catering,27AABCG5678D1ZC,"45 Koramangala, Bengaluru",Priya Mehta,9823456789,priya@greenleaf.com,ops@greenleaf.com,5678901234,SBIN0003456,2024-02-01,2025-01-31,A002,A001
+V004,Food,TasteMakers Co,29AADCT9012E1ZD,"78 Indiranagar, Bengaluru",Vikram Singh,9834567890,vikram@tastemakers.com,support@tastemakers.com,1357924680,AXIS0004567,2024-04-01,2025-03-31,A002,A003
+V005,IT,TechCore Systems,27AABCT3456F1ZE,"90 Whitefield, Bengaluru",Ananya Sharma,9845678901,ananya@techcore.com,helpdesk@techcore.com,2468013579,KOTAK0005678,2024-01-15,2025-01-14,A003,A001
+V006,IT,CloudNine IT Services,29AADCC7890G1ZF,"23 Electronic City, Bengaluru",Deepak Patel,9856789012,deepak@cloudnine.com,support@cloudnine.com,3579012468,HDFC0006789,2024-06-01,2025-05-31,A003,A002

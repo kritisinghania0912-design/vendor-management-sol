@@ -1,0 +1,11 @@
+TicketID,VendorID,ReportDate,RiskLevel,Priority,Category,Description,ActionTaken,Status,AssignedTo_AdminID,ResolvedBy_AdminID,AdminRemarks
+T001,V001,2025-03-15,High,P1,Expiry,Driver license expired for DRV003 - Mohan Das,Soft-blocked from trip assignment,Open,A002,,
+T002,V001,2025-03-18,Medium,P2,Safety,Vehicle KA-01-AB-1234 PUC expired 5 days ago,Notified vendor to renew,In-Progress,A002,,Vendor promised renewal by 25th March
+T003,V002,2025-03-20,High,P0,Safety,Incident reported on trip TR045 - Minor accident,Police report filed; driver suspended,In-Progress,A003,,Awaiting police clearance
+T004,V003,2025-03-22,Low,P3,Expiry,FSSAI certificate expiring in 15 days,Reminder sent to vendor,Open,A001,,
+T005,V004,2025-03-10,Medium,P2,Discrepancy,Invoice INV005 billed 500 plates; badges show 430,Raised dispute with vendor,Resolved,A003,A003,Vendor agreed to credit note for 70 plates
+T006,V005,2025-03-25,High,P1,Expiry,SOC2 Type II certification expired 3 days ago,Access review initiated,Open,A001,,Critical - IT vendor access review needed
+T007,V006,2025-03-28,Medium,P2,Discrepancy,License count mismatch - billed 110 seats; only 95 active,Invoice dispute raised,In-Progress,A002,,Vendor reviewing their records
+T008,V001,2025-04-01,Low,P4,Employee Complaint,Employee complaint about cab cleanliness - route BLR-002,Warned vendor; cleaning audit requested,Open,A002,,
+T009,V003,2025-04-02,Medium,P2,Expiry,Water quality test certificate overdue by 10 days,Urgently requested updated cert,Open,A001,,
+T010,V005,2025-04-03,High,P1,Safety,3 laptops flagged - no security patch in 72 hours,Vendor notified; patch deployment scheduled,In-Progress,A003,,Patch window tonight 2am-4am

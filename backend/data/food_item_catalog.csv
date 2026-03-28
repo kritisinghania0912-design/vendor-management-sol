@@ -1,0 +1,11 @@
+ItemID,VendorID,ItemName,Calories,DietaryType,AllergensInfo,IngredientsList
+ITEM001,V003,Idli Sambar,180,Veg,Gluten,Rice|Urad Dal|Sambar
+ITEM002,V003,Masala Dosa,320,Veg,Gluten,Rice|Urad Dal|Potato|Onion
+ITEM003,V003,Poha,250,Veg,None,Flattened Rice|Onion|Mustard Seeds|Turmeric
+ITEM004,V003,Dal Rice,450,Veg,None,Rice|Toor Dal|Ghee|Spices
+ITEM005,V003,Chicken Curry with Rice,620,Non-Veg,None,Chicken|Rice|Spices|Onion|Tomato
+ITEM006,V004,Veg Biryani,550,Veg,None,Basmati Rice|Mixed Vegetables|Saffron|Spices
+ITEM007,V004,Paneer Butter Masala,480,Veg,Dairy,Paneer|Tomato|Cream|Butter|Spices
+ITEM008,V004,Egg Curry,380,Non-Veg,Egg,Egg|Onion|Tomato|Spices
+ITEM009,V004,Curd Rice,280,Veg,Dairy,Rice|Curd|Mustard Seeds|Curry Leaves
+ITEM010,V004,Fruit Salad,150,Vegan,None,Apple|Banana|Orange|Pomegranate|Mint

@@ -1,0 +1,11 @@
+AssetID,VendorID,AssetName,AssetCategory,BasePrice,BillingCycle,ManagerApprovalRequired,SupportIncluded
+ITA001,V005,Microsoft 365 Business,Software,1200,Monthly,false,true
+ITA002,V005,Cisco Meraki WiFi,WiFi,8500,Monthly,true,true
+ITA003,V005,Dell Latitude 5520,Hardware,75000,Yearly,true,true
+ITA004,V005,Fortinet VPN,Software,4500,Monthly,true,true
+ITA005,V005,Dell PowerEdge Server,Hardware,250000,Yearly,true,true
+ITA006,V006,Slack Business,Software,900,Monthly,false,true
+ITA007,V006,GitHub Enterprise,Software,2100,Monthly,true,true
+ITA008,V006,MacBook Pro M3,Hardware,185000,Yearly,true,true
+ITA009,V006,Zoom Business,Software,1500,Monthly,false,true
+ITA010,V006,HP LaserJet Pro,Hardware,32000,Yearly,false,true

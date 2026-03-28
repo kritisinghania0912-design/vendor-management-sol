@@ -1,0 +1,16 @@
+TripID,CarID,DriverID,EmployeeID,TripDate,PickupTime,DropTime,PickupLocation,DropLocation,DistanceDriven_KM,IncidentReported
+TR001,CAR002,DRV001,EMP101,2025-04-01,08:00,08:45,Whitefield,Electronic City,18.5,false
+TR002,CAR003,DRV002,EMP102,2025-04-01,08:10,09:05,Koramangala,Manyata Tech Park,22.3,false
+TR003,CAR001,DRV003,EMP103,2025-04-01,08:15,09:10,Indiranagar,Outer Ring Road,19.8,false
+TR004,CAR004,DRV004,EMP104,2025-04-01,08:20,09:30,HSR Layout,Hebbal,28.4,false
+TR005,CAR005,DRV005,EMP201,2025-04-01,08:00,08:50,JP Nagar,Marathahalli,20.1,false
+TR006,CAR006,DRV006,EMP202,2025-04-01,08:30,09:20,Bannerghatta Road,Whitefield,31.2,false
+TR007,CAR002,DRV001,EMP105,2025-04-02,08:00,08:42,Whitefield,Electronic City,18.2,false
+TR008,CAR003,DRV002,EMP106,2025-04-02,08:15,09:15,Koramangala,Manyata Tech Park,23.1,false
+TR009,CAR007,DRV007,EMP203,2025-04-02,08:05,08:55,Jayanagar,Hebbal,24.8,false
+TR010,CAR001,DRV003,EMP107,2025-04-02,08:20,09:25,Indiranagar,Outer Ring Road,20.5,false
+TR011,CAR004,DRV004,EMP108,2025-04-03,08:00,09:00,HSR Layout,Hebbal,28.9,false
+TR012,CAR005,DRV005,EMP204,2025-04-03,08:10,09:05,JP Nagar,Marathahalli,21.0,false
+TR013,CAR006,DRV006,EMP205,2025-04-03,08:30,09:45,Bannerghatta Road,Whitefield,32.0,true
+TR014,CAR002,DRV001,EMP109,2025-04-04,08:00,08:48,Whitefield,Electronic City,18.7,false
+TR015,CAR003,DRV002,EMP110,2025-04-04,08:15,09:10,Koramangala,Manyata Tech Park,22.8,false

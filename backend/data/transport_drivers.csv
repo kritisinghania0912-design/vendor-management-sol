@@ -1,0 +1,8 @@
+DriverID,VendorID,Name,VendorEmployeeID,DOB,Gender,LicenseNumber,LicenseExpiryDate,GovID_Type,GovID_Number,BGV_Status,LanguagesSpoken
+DRV001,V001,Suresh Nair,SE001,1985-06-15,Male,KA2010001234,2027-05-30,Aadhaar,XXXX-XXXX-1234,Verified,Kannada|Hindi|English
+DRV002,V001,Rajesh Kumar,SE002,1990-03-22,Male,KA2015005678,2026-08-15,Aadhaar,XXXX-XXXX-5678,Verified,Kannada|Telugu|Hindi
+DRV003,V001,Mohan Das,SE003,1978-11-10,Male,KA2009009012,2025-02-28,Aadhaar,XXXX-XXXX-9012,Verified,Kannada|Hindi
+DRV004,V001,Arun Sharma,SE004,1992-07-05,Male,KA2018003456,2028-07-04,PAN,ABCDE1234F,Verified,Hindi|English|Kannada
+DRV005,V002,Prasad Reddy,CE001,1987-09-18,Male,AP2012007890,2026-11-20,Aadhaar,XXXX-XXXX-7890,Verified,Telugu|Kannada|Hindi
+DRV006,V002,Kumar Swamy,CE002,1983-04-30,Male,KA2008002345,2025-04-29,Aadhaar,XXXX-XXXX-2345,Pending,Kannada|Tamil
+DRV007,V002,Bhaskar Rao,CE003,1995-12-12,Male,TN2020006789,2030-12-11,Aadhaar,XXXX-XXXX-6789,Verified,Tamil|English|Kannada
