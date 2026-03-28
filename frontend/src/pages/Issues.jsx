@@ -3,31 +3,17 @@ import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
 import { makeApi } from '../api';
 import { useAuth } from '../context/AuthContext';
-
-function riskBadge(v) {
-  const map = { High: 'badge badge-red', Medium: 'badge badge-amber', Low: 'badge badge-green' };
-  return <span className={map[v] || 'badge badge-gray'}>{v}</span>;
-}
-
-function statusBadge(v) {
-  const map = { Open: 'badge badge-red', 'In-Progress': 'badge badge-amber', Resolved: 'badge badge-green' };
-  return <span className={map[v] || 'badge badge-gray'}>{v}</span>;
-}
-
-function priorityBadge(v) {
-  const map = { P0: 'badge badge-red', P1: 'badge badge-red', P2: 'badge badge-amber', P3: 'badge badge-blue', P4: 'badge badge-gray' };
-  return <span className={map[v] || 'badge badge-gray'}>{v}</span>;
-}
+import { riskBadge, statusBadge, priorityBadge } from '../utils/badges';
 
 const COLUMNS = [
   { key: 'TicketID', label: 'Ticket ID' },
   { key: 'VendorID', label: 'Vendor' },
   { key: 'ReportDate', label: 'Date' },
-  { key: 'Priority', label: 'Priority', render: v => priorityBadge(v) },
-  { key: 'RiskLevel', label: 'Risk', render: v => riskBadge(v) },
+  { key: 'Priority', label: 'Priority', render: priorityBadge },
+  { key: 'RiskLevel', label: 'Risk', render: riskBadge },
   { key: 'Category', label: 'Category' },
   { key: 'Description', label: 'Description' },
-  { key: 'Status', label: 'Status', render: v => statusBadge(v) },
+  { key: 'Status', label: 'Status', render: statusBadge },
 ];
 
 const EMPTY_FORM = {
@@ -37,7 +23,6 @@ const EMPTY_FORM = {
 
 export default function Issues() {
   const { vendorParam, isAdmin, user } = useAuth();
-  const api = makeApi(vendorParam);
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -49,26 +34,34 @@ export default function Issues() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
+    const api = makeApi(vendorParam);
+    setLoading(true);
     api.getIssues().then(setIssues).catch(console.error).finally(() => setLoading(false));
   }, [vendorParam]);
 
-  const filtered = useMemo(() => {
-    return issues.filter(i => {
-      if (filterRisk && i.RiskLevel !== filterRisk) return false;
-      if (filterStatus && i.Status !== filterStatus) return false;
-      if (filterCat && i.Category !== filterCat) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return Object.values(i).some(v => String(v).toLowerCase().includes(q));
-      }
-      return true;
-    });
-  }, [issues, filterRisk, filterStatus, filterCat, search]);
+  const stats = useMemo(() => ({
+    open: issues.filter(i => i.Status === 'Open').length,
+    inProgress: issues.filter(i => i.Status === 'In-Progress').length,
+    resolved: issues.filter(i => i.Status === 'Resolved').length,
+    highRisk: issues.filter(i => i.RiskLevel === 'High').length,
+  }), [issues]);
+
+  const filtered = useMemo(() => issues.filter(i => {
+    if (filterRisk && i.RiskLevel !== filterRisk) return false;
+    if (filterStatus && i.Status !== filterStatus) return false;
+    if (filterCat && i.Category !== filterCat) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return Object.values(i).some(v => String(v).toLowerCase().includes(q));
+    }
+    return true;
+  }), [issues, filterRisk, filterStatus, filterCat, search]);
 
   async function handleSave() {
     if (!form.VendorID || !form.Description) return alert('Vendor ID and Description are required.');
     setSaving(true);
     try {
+      const api = makeApi(vendorParam);
       const created = await api.createIssue({ ...form, ReportDate: form.ReportDate || new Date().toISOString().slice(0, 10) });
       setIssues(prev => [...prev, created]);
       setShowModal(false);
@@ -80,33 +73,29 @@ export default function Issues() {
     }
   }
 
-  const openCount = issues.filter(i => i.Status === 'Open').length;
-  const highRiskCount = issues.filter(i => i.RiskLevel === 'High' && i.Status !== 'Resolved').length;
-
   return (
     <div>
       <div className="page-header">
         <div>
           <div className="page-title">{isAdmin ? 'Compliance Issues' : 'My Issues'}</div>
           <div className="page-subtitle">
-            {openCount} open · {highRiskCount} high risk
+            {stats.open} open · {stats.highRisk} high risk
             {!isAdmin && ` · ${user?.vendorName}`}
           </div>
         </div>
         {isAdmin && (
-          <button className="btn-primary" onClick={() => { setForm({ ...EMPTY_FORM, VendorID: '' }); setShowModal(true); }}>
+          <button className="btn-primary" onClick={() => { setForm(EMPTY_FORM); setShowModal(true); }}>
             + Raise Issue
           </button>
         )}
       </div>
 
-      {/* Summary badges */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
         {[
-          { label: 'Open', count: issues.filter(i => i.Status === 'Open').length, cls: 'badge badge-red' },
-          { label: 'In Progress', count: issues.filter(i => i.Status === 'In-Progress').length, cls: 'badge badge-amber' },
-          { label: 'Resolved', count: issues.filter(i => i.Status === 'Resolved').length, cls: 'badge badge-green' },
-          { label: 'High Risk', count: issues.filter(i => i.RiskLevel === 'High').length, cls: 'badge badge-red' },
+          { label: 'Open', count: stats.open, cls: 'badge badge-red' },
+          { label: 'In Progress', count: stats.inProgress, cls: 'badge badge-amber' },
+          { label: 'Resolved', count: stats.resolved, cls: 'badge badge-green' },
+          { label: 'High Risk', count: stats.highRisk, cls: 'badge badge-red' },
         ].map(({ label, count, cls }) => (
           <div key={label} className="card" style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
             <span className={cls}>{count}</span>
@@ -134,10 +123,7 @@ export default function Issues() {
         </div>
       </div>
 
-      {loading
-        ? <div className="loading">Loading issues…</div>
-        : <DataTable columns={COLUMNS} data={filtered} />
-      }
+      {loading ? <div className="loading">Loading issues…</div> : <DataTable columns={COLUMNS} data={filtered} />}
 
       {showModal && (
         <Modal title="Raise Issue" onClose={() => setShowModal(false)} onSave={handleSave} saving={saving}>

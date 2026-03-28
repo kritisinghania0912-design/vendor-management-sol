@@ -10,7 +10,7 @@ frontend/.vite/
 .env.local
 .env.*.local
 
-# Claude Code internal
+# Local tool settings
 .claude/settings.local.json
 
 # OS

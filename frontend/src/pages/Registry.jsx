@@ -4,7 +4,6 @@ import Modal from '../components/Modal';
 import { makeApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 
-// ── Transport Registry ────────────────────────────────────
 const CAR_COLS = [
   { key: 'CarID', label: 'Car ID' },
   { key: 'VendorID', label: 'Vendor' },
@@ -39,7 +38,8 @@ const DRV_COLS = [
 const EMPTY_CAR = { VendorID: '', CarNumber: '', CarModel: '', CarType: 'Sedan', SeatingCapacity: '', PUC_Status: 'Valid', PUC_ExpiryDate: '', InsuranceExpiryDate: '', GPSTrackerID: '' };
 const EMPTY_DRV = { VendorID: '', Name: '', VendorEmployeeID: '', DOB: '', Gender: 'Male', LicenseNumber: '', LicenseExpiryDate: '', GovID_Type: 'Aadhaar', GovID_Number: '', BGV_Status: 'Pending', LanguagesSpoken: '' };
 
-function TransportRegistry({ api, isAdmin, user }) {
+function TransportRegistry() {
+  const { vendorParam, isAdmin, user } = useAuth();
   const [subTab, setSubTab] = useState('cars');
   const [cars, setCars] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -50,15 +50,17 @@ function TransportRegistry({ api, isAdmin, user }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    const api = makeApi(vendorParam);
     Promise.all([api.getCars(), api.getDrivers()])
       .then(([c, d]) => { setCars(c); setDrivers(d); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [vendorParam]);
 
   const expiredLicenses = drivers.filter(d => d.LicenseExpiryDate && new Date(d.LicenseExpiryDate) < new Date()).length;
   const expiredPUC = cars.filter(c => c.PUC_Status === 'Expired').length;
 
   async function handleSave() {
+    const api = makeApi(vendorParam);
     setSaving(true);
     try {
       if (subTab === 'cars') { const r = await api.createCar({ ...formCar, VendorID: formCar.VendorID || user?.vendorId }); setCars(p => [...p, r]); setFormCar(EMPTY_CAR); }
@@ -124,7 +126,6 @@ function TransportRegistry({ api, isAdmin, user }) {
   );
 }
 
-// ── Food Registry ─────────────────────────────────────────
 const STAFF_COLS = [
   { key: 'StaffID', label: 'Staff ID' },
   { key: 'VendorID', label: 'Vendor' },
@@ -149,7 +150,8 @@ const CATALOG_COLS = [
   { key: 'IngredientsList', label: 'Ingredients' },
 ];
 
-function FoodRegistry({ api, isAdmin, user }) {
+function FoodRegistry() {
+  const { vendorParam, isAdmin, user } = useAuth();
   const [subTab, setSubTab] = useState('staff');
   const [staff, setStaff] = useState([]);
   const [catalog, setCatalog] = useState([]);
@@ -160,14 +162,16 @@ function FoodRegistry({ api, isAdmin, user }) {
   const [formItem, setFormItem] = useState({ VendorID: '', ItemName: '', Calories: '', DietaryType: 'Veg', AllergensInfo: 'None', IngredientsList: '' });
 
   useEffect(() => {
+    const api = makeApi(vendorParam);
     Promise.all([api.getFoodStaff(), api.getFoodCatalog()])
       .then(([s, c]) => { setStaff(s); setCatalog(c); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [vendorParam]);
 
   const pendingBGV = staff.filter(s => s.BGV_Status !== 'Verified').length;
 
   async function handleSave() {
+    const api = makeApi(vendorParam);
     setSaving(true);
     try {
       if (subTab === 'staff') { const r = await api.createFoodStaff({ ...formStaff, VendorID: formStaff.VendorID || user?.vendorId }); setStaff(p => [...p, r]); }
@@ -229,7 +233,6 @@ function FoodRegistry({ api, isAdmin, user }) {
   );
 }
 
-// ── IT Registry ───────────────────────────────────────────
 const ASSET_COLS = [
   { key: 'AssetID', label: 'Asset ID' },
   { key: 'VendorID', label: 'Vendor' },
@@ -242,19 +245,24 @@ const ASSET_COLS = [
 ];
 const EMPTY_ASSET = { VendorID: '', AssetName: '', AssetCategory: 'Software', BasePrice: '', BillingCycle: 'Monthly', ManagerApprovalRequired: 'false', SupportIncluded: 'true' };
 
-function ITRegistry({ api, isAdmin, user }) {
+function ITRegistry() {
+  const { vendorParam, isAdmin, user } = useAuth();
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY_ASSET);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { api.getITAssets().then(setAssets).finally(() => setLoading(false)); }, []);
+  useEffect(() => {
+    const api = makeApi(vendorParam);
+    api.getITAssets().then(setAssets).finally(() => setLoading(false));
+  }, [vendorParam]);
 
   const monthlyAMC = assets.filter(a => a.BillingCycle === 'Monthly').reduce((s, a) => s + Number(a.BasePrice || 0), 0);
   const needsApproval = assets.filter(a => a.ManagerApprovalRequired === 'true').length;
 
   async function handleSave() {
+    const api = makeApi(vendorParam);
     setSaving(true);
     try {
       const r = await api.createITAsset({ ...form, VendorID: form.VendorID || user?.vendorId });
@@ -294,10 +302,8 @@ function ITRegistry({ api, isAdmin, user }) {
   );
 }
 
-// ── Main Registry Page ────────────────────────────────────
 export default function Registry() {
-  const { vendorParam, isVendor, isAdmin, user } = useAuth();
-  const api = makeApi(vendorParam);
+  const { isVendor, user } = useAuth();
 
   const defaultVendor = isVendor
     ? (user?.vendorCategory === 'Food' ? 'food' : user?.vendorCategory === 'IT' ? 'it' : 'transport')
@@ -319,9 +325,9 @@ export default function Registry() {
           <button className={`vendor-tab${vendor === 'it' ? ' active' : ''}`} onClick={() => setVendor('it')}>💻 IT</button>
         </div>
       )}
-      {vendor === 'transport' && <TransportRegistry api={api} isAdmin={isAdmin} user={user} />}
-      {vendor === 'food' && <FoodRegistry api={api} isAdmin={isAdmin} user={user} />}
-      {vendor === 'it' && <ITRegistry api={api} isAdmin={isAdmin} user={user} />}
+      {vendor === 'transport' && <TransportRegistry />}
+      {vendor === 'food' && <FoodRegistry />}
+      {vendor === 'it' && <ITRegistry />}
     </div>
   );
 }

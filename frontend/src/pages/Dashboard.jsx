@@ -1,30 +1,19 @@
 import { useState, useEffect } from 'react';
 import { makeApi } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { riskBadge, statusBadge, paymentBadge } from '../utils/badges';
 
-function riskBadge(level) {
-  const map = { High: 'badge badge-red', Medium: 'badge badge-amber', Low: 'badge badge-green' };
-  return <span className={map[level] || 'badge badge-gray'}>{level}</span>;
-}
-
-function statusBadge(status) {
-  const map = { Open: 'badge badge-red', 'In-Progress': 'badge badge-amber', Resolved: 'badge badge-green' };
-  return <span className={map[status] || 'badge badge-gray'}>{status}</span>;
-}
-
-function paymentBadge(status) {
-  const map = { 'Fully Paid': 'badge badge-green', Partial: 'badge badge-amber', Pending: 'badge badge-red' };
-  return <span className={map[status] || 'badge badge-gray'}>{status}</span>;
-}
+const fmt = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
 export default function Dashboard() {
   const { vendorParam, isVendor, user } = useAuth();
-  const api = makeApi(vendorParam);
   const [data, setData] = useState(null);
   const [finance, setFinance] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const api = makeApi(vendorParam);
+    setLoading(true);
     Promise.all([api.getDashboard(), api.getFinance()])
       .then(([d, f]) => { setData(d); setFinance(f); })
       .catch(console.error)
@@ -33,8 +22,6 @@ export default function Dashboard() {
 
   if (loading) return <div className="loading">Loading dashboard…</div>;
   if (!data) return <div className="loading">Failed to load data.</div>;
-
-  const fmt = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
   return (
     <div>
@@ -45,7 +32,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="cards-row">
         {isVendor ? (
           <>
@@ -60,9 +46,9 @@ export default function Dashboard() {
               <div className="card-footer">{fmt(data.totalAmountDue)} outstanding</div>
             </div>
             <div className="card">
-              <div className="card-label">Recent Trips / Services</div>
-              <div className="card-value">{data.recentTrips?.length ?? data.recentIssues?.length ?? 0}</div>
-              <div className="card-footer">Last 5 activity records</div>
+              <div className="card-label">Recent Activity</div>
+              <div className="card-value">{data.recentTrips?.length ?? 0}</div>
+              <div className="card-footer">Last 5 records</div>
             </div>
             <div className="card">
               <div className="card-label">Compliance Score</div>
@@ -77,9 +63,7 @@ export default function Dashboard() {
             <div className="card">
               <div className="card-label">Total Vendors</div>
               <div className="card-value">{data.totalVendors}</div>
-              <div className="card-footer">
-                {Object.entries(data.vendorsByCategory || {}).map(([k, v]) => `${v} ${k}`).join(', ')}
-              </div>
+              <div className="card-footer">{Object.entries(data.vendorsByCategory || {}).map(([k, v]) => `${v} ${k}`).join(', ')}</div>
             </div>
             <div className="card">
               <div className="card-label">Open Issues</div>
@@ -101,20 +85,13 @@ export default function Dashboard() {
       </div>
 
       <div className="two-col">
-        {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
             <div className="section-header">Recent Issues</div>
             <div className="table-wrap">
               <table>
                 <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Vendor</th>
-                    <th>Category</th>
-                    <th>Risk</th>
-                    <th>Status</th>
-                  </tr>
+                  <tr><th>ID</th><th>Vendor</th><th>Category</th><th>Risk</th><th>Status</th></tr>
                 </thead>
                 <tbody>
                   {data.recentIssues?.length > 0 ? data.recentIssues.map(issue => (
@@ -133,20 +110,13 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Recent trips (transport vendors / admin) */}
           {data.recentTrips?.length > 0 && (
             <div>
               <div className="section-header">Recent Trip Logs</div>
               <div className="table-wrap">
                 <table>
                   <thead>
-                    <tr>
-                      <th>Trip ID</th>
-                      <th>Driver</th>
-                      <th>Date</th>
-                      <th>KM</th>
-                      <th>Incident</th>
-                    </tr>
+                    <tr><th>Trip ID</th><th>Driver</th><th>Date</th><th>KM</th><th>Incident</th></tr>
                   </thead>
                   <tbody>
                     {data.recentTrips.map(trip => (
@@ -165,7 +135,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Right column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {!isVendor && (
             <div>
@@ -187,19 +156,12 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Finance summary */}
           <div>
             <div className="section-header">{isVendor ? 'My Invoices' : 'Invoice Status'}</div>
             <div className="table-wrap">
               <table>
                 <thead>
-                  <tr>
-                    <th>Invoice</th>
-                    <th>Period</th>
-                    <th>Billed (₹)</th>
-                    <th>Due (₹)</th>
-                    <th>Status</th>
-                  </tr>
+                  <tr><th>Invoice</th><th>Period</th><th>Billed (₹)</th><th>Due (₹)</th><th>Status</th></tr>
                 </thead>
                 <tbody>
                   {finance.slice(0, 5).map(inv => (

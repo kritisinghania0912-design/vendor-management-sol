@@ -4,7 +4,6 @@ import Modal from '../components/Modal';
 import { makeApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 
-// ── Transport ─────────────────────────────────────────────
 const TRIP_COLS = [
   { key: 'TripID', label: 'Trip ID' },
   { key: 'CarID', label: 'Car ID' },
@@ -20,7 +19,8 @@ const TRIP_COLS = [
 ];
 const EMPTY_TRIP = { CarID: '', DriverID: '', EmployeeID: '', TripDate: '', PickupTime: '', DropTime: '', PickupLocation: '', DropLocation: '', DistanceDriven_KM: '', IncidentReported: 'false' };
 
-function TransportPulse({ api }) {
+function TransportPulse() {
+  const { vendorParam } = useAuth();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -29,23 +29,25 @@ function TransportPulse({ api }) {
   const [search, setSearch] = useState('');
   const [filterIncident, setFilterIncident] = useState('');
 
-  useEffect(() => { api.getTrips().then(setTrips).finally(() => setLoading(false)); }, []);
+  useEffect(() => {
+    const api = makeApi(vendorParam);
+    api.getTrips().then(setTrips).finally(() => setLoading(false));
+  }, [vendorParam]);
 
-  const filtered = useMemo(() => {
-    return trips.filter(r => {
-      if (filterIncident && r.IncidentReported !== filterIncident) return false;
-      if (search) { const q = search.toLowerCase(); return Object.values(r).some(v => String(v).toLowerCase().includes(q)); }
-      return true;
-    });
-  }, [trips, search, filterIncident]);
+  const filtered = useMemo(() => trips.filter(r => {
+    if (filterIncident && r.IncidentReported !== filterIncident) return false;
+    if (search) { const q = search.toLowerCase(); return Object.values(r).some(v => String(v).toLowerCase().includes(q)); }
+    return true;
+  }), [trips, search, filterIncident]);
 
-  const totalKm = trips.reduce((s, t) => s + parseFloat(t.DistanceDriven_KM || 0), 0);
-  const incidents = trips.filter(t => t.IncidentReported === 'true').length;
+  const totalKm = useMemo(() => trips.reduce((s, t) => s + parseFloat(t.DistanceDriven_KM || 0), 0), [trips]);
+  const incidents = useMemo(() => trips.filter(t => t.IncidentReported === 'true').length, [trips]);
 
   async function handleSave() {
     if (!form.CarID || !form.DriverID) return alert('Car ID and Driver ID are required.');
     setSaving(true);
     try {
+      const api = makeApi(vendorParam);
       const row = await api.createTrip({ ...form, TripDate: form.TripDate || new Date().toISOString().slice(0, 10) });
       setTrips(p => [...p, row]); setShowModal(false); setForm(EMPTY_TRIP);
     } catch { alert('Failed to save.'); }
@@ -80,8 +82,8 @@ function TransportPulse({ api }) {
             <div className="form-group"><label className="form-label">Trip Date <span className="req">*</span></label><input type="date" className="form-input" value={form.TripDate} onChange={e => setForm(f => ({...f,TripDate:e.target.value}))} /></div>
             <div className="form-group"><label className="form-label">Pickup Time</label><input type="time" className="form-input" value={form.PickupTime} onChange={e => setForm(f => ({...f,PickupTime:e.target.value}))} /></div>
             <div className="form-group"><label className="form-label">Drop Time</label><input type="time" className="form-input" value={form.DropTime} onChange={e => setForm(f => ({...f,DropTime:e.target.value}))} /></div>
-            <div className="form-group"><label className="form-label">From</label><input className="form-input" value={form.PickupLocation} onChange={e => setForm(f => ({...f,PickupLocation:e.target.value}))} placeholder="e.g. Whitefield" /></div>
-            <div className="form-group"><label className="form-label">To</label><input className="form-input" value={form.DropLocation} onChange={e => setForm(f => ({...f,DropLocation:e.target.value}))} placeholder="e.g. Electronic City" /></div>
+            <div className="form-group"><label className="form-label">From</label><input className="form-input" value={form.PickupLocation} onChange={e => setForm(f => ({...f,PickupLocation:e.target.value}))} placeholder="Whitefield" /></div>
+            <div className="form-group"><label className="form-label">To</label><input className="form-input" value={form.DropLocation} onChange={e => setForm(f => ({...f,DropLocation:e.target.value}))} placeholder="Electronic City" /></div>
             <div className="form-group"><label className="form-label">Distance (KM)</label><input type="number" className="form-input" value={form.DistanceDriven_KM} onChange={e => setForm(f => ({...f,DistanceDriven_KM:e.target.value}))} placeholder="18.5" /></div>
             <div className="form-group"><label className="form-label">Incident Reported</label><select className="form-input" value={form.IncidentReported} onChange={e => setForm(f => ({...f,IncidentReported:e.target.value}))}><option value="false">No</option><option value="true">Yes</option></select></div>
           </div>
@@ -91,7 +93,6 @@ function TransportPulse({ api }) {
   );
 }
 
-// ── Food ──────────────────────────────────────────────────
 const SVC_COLS = [
   { key: 'ServiceID', label: 'Service ID' },
   { key: 'VendorID', label: 'Vendor' },
@@ -112,7 +113,8 @@ const SVC_COLS = [
 ];
 const EMPTY_SVC = { VendorID: '', ServiceDate: '', MealType: 'Lunch', PricePerPlate: '', PlatesBilledByVendor: '', ActualBadgesSwiped: '' };
 
-function FoodPulse({ api, user }) {
+function FoodPulse() {
+  const { vendorParam, user } = useAuth();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -121,7 +123,10 @@ function FoodPulse({ api, user }) {
   const [search, setSearch] = useState('');
   const [filterMeal, setFilterMeal] = useState('');
 
-  useEffect(() => { api.getFoodServices().then(setServices).finally(() => setLoading(false)); }, []);
+  useEffect(() => {
+    const api = makeApi(vendorParam);
+    api.getFoodServices().then(setServices).finally(() => setLoading(false));
+  }, [vendorParam]);
 
   const filtered = useMemo(() => services.filter(r => {
     if (filterMeal && r.MealType !== filterMeal) return false;
@@ -129,15 +134,16 @@ function FoodPulse({ api, user }) {
     return true;
   }), [services, search, filterMeal]);
 
-  const totalBilled = services.reduce((s, r) => s + parseInt(r.PlatesBilledByVendor || 0) * parseFloat(r.PricePerPlate || 0), 0);
-  const totalActual = services.reduce((s, r) => s + parseInt(r.ActualBadgesSwiped || 0) * parseFloat(r.PricePerPlate || 0), 0);
-  const discrepancies = services.filter(r => parseInt(r.PlatesBilledByVendor) > parseInt(r.ActualBadgesSwiped)).length;
+  const totalBilled = useMemo(() => services.reduce((s, r) => s + parseInt(r.PlatesBilledByVendor || 0) * parseFloat(r.PricePerPlate || 0), 0), [services]);
+  const totalActual = useMemo(() => services.reduce((s, r) => s + parseInt(r.ActualBadgesSwiped || 0) * parseFloat(r.PricePerPlate || 0), 0), [services]);
+  const discrepancies = useMemo(() => services.filter(r => parseInt(r.PlatesBilledByVendor) > parseInt(r.ActualBadgesSwiped)).length, [services]);
 
   async function handleSave() {
     if (!form.VendorID) return alert('Vendor ID is required.');
     setSaving(true);
     try {
-      const row = await api.createFoodService({ ...form, ServiceDate: form.ServiceDate || new Date().toISOString().slice(0, 10), VendorID: form.VendorID || user?.vendorId });
+      const api = makeApi(vendorParam);
+      const row = await api.createFoodService({ ...form, ServiceDate: form.ServiceDate || new Date().toISOString().slice(0, 10) });
       setServices(p => [...p, row]); setShowModal(false); setForm(EMPTY_SVC);
     } catch { alert('Failed to save.'); }
     finally { setSaving(false); }
@@ -167,7 +173,7 @@ function FoodPulse({ api, user }) {
             <div className="form-group"><label className="form-label">Service Date</label><input type="date" className="form-input" value={form.ServiceDate} onChange={e => setForm(f => ({...f,ServiceDate:e.target.value}))} /></div>
             <div className="form-group"><label className="form-label">Meal Type</label><select className="form-input" value={form.MealType} onChange={e => setForm(f => ({...f,MealType:e.target.value}))}><option>Breakfast</option><option>Lunch</option><option>Snacks</option><option>Dinner</option></select></div>
             <div className="form-group"><label className="form-label">Price Per Plate (₹)</label><input type="number" className="form-input" value={form.PricePerPlate} onChange={e => setForm(f => ({...f,PricePerPlate:e.target.value}))} placeholder="150" /></div>
-            <div className="form-group"><label className="form-label">Plates Billed by Vendor</label><input type="number" className="form-input" value={form.PlatesBilledByVendor} onChange={e => setForm(f => ({...f,PlatesBilledByVendor:e.target.value}))} /></div>
+            <div className="form-group"><label className="form-label">Plates Billed</label><input type="number" className="form-input" value={form.PlatesBilledByVendor} onChange={e => setForm(f => ({...f,PlatesBilledByVendor:e.target.value}))} /></div>
             <div className="form-group"><label className="form-label">Actual Badges Swiped</label><input type="number" className="form-input" value={form.ActualBadgesSwiped} onChange={e => setForm(f => ({...f,ActualBadgesSwiped:e.target.value}))} /></div>
           </div>
         </Modal>
@@ -176,7 +182,6 @@ function FoodPulse({ api, user }) {
   );
 }
 
-// ── IT ────────────────────────────────────────────────────
 const SW_COLS = [
   { key: 'AssetID', label: 'Asset ID' },
   { key: 'CurrentVersion', label: 'Version' },
@@ -184,7 +189,7 @@ const SW_COLS = [
   { key: 'RenewalDate', label: 'Renewal Date', render: v => {
     if (!v) return '—';
     const daysLeft = Math.round((new Date(v) - new Date()) / 86400000);
-    return <span className={daysLeft < 30 ? 'discrepancy' : ''}>{v} {daysLeft < 30 && `(${daysLeft}d)`}</span>;
+    return <span className={daysLeft < 30 ? 'discrepancy' : ''}>{v}{daysLeft < 30 ? ` (${daysLeft}d)` : ''}</span>;
   }},
   { key: 'TotalLicensesPurchased', label: 'Total Lic.' },
   { key: 'ActiveLicensesUsed', label: 'Active', render: (v, row) => {
@@ -199,19 +204,19 @@ const HW_COLS = [
   { key: 'ManufacturerDate', label: 'Mfr. Date' },
   { key: 'WarrantyExpiryDate', label: 'Warranty Expiry', render: v => {
     if (!v) return '—';
-    const expired = new Date(v) < new Date();
-    return <span className={expired ? 'discrepancy' : ''}>{v}</span>;
+    return <span className={new Date(v) < new Date() ? 'discrepancy' : ''}>{v}</span>;
   }},
   { key: 'MaintenanceCost', label: 'Maint. Cost (₹)' },
   { key: 'HardwareStatus', label: 'Status', render: v => {
-    const map = { Working: 'badge badge-green', 'Needs Repair': 'badge badge-amber', Decommissioned: 'badge badge-red' };
-    return <span className={map[v] || 'badge badge-gray'}>{v}</span>;
+    const cls = { Working: 'badge badge-green', 'Needs Repair': 'badge badge-amber', Decommissioned: 'badge badge-red' };
+    return <span className={cls[v] || 'badge badge-gray'}>{v}</span>;
   }},
 ];
 const EMPTY_SW = { AssetID: '', CurrentVersion: '', IsAutoRenewed: 'false', RenewalDate: '', TotalLicensesPurchased: '', ActiveLicensesUsed: '', DataPrivacyStatus: '' };
 const EMPTY_HW = { AssetID: '', ManufacturerDate: '', SerialNumber: '', MAC_Address: '', WarrantyExpiryDate: '', MaintenanceCost: '', HardwareStatus: 'Working' };
 
-function ITPulse({ api }) {
+function ITPulse() {
+  const { vendorParam } = useAuth();
   const [subTab, setSubTab] = useState('software');
   const [software, setSoftware] = useState([]);
   const [hardware, setHardware] = useState([]);
@@ -222,16 +227,21 @@ function ITPulse({ api }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    const api = makeApi(vendorParam);
     Promise.all([api.getITSoftware(), api.getITHardware()])
       .then(([sw, hw]) => { setSoftware(sw); setHardware(hw); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [vendorParam]);
 
-  const expiringSoon = software.filter(s => { const d = new Date(s.RenewalDate); return d && (d - new Date()) < 30 * 86400000; }).length;
+  const expiringSoon = useMemo(() => software.filter(s => {
+    const d = new Date(s.RenewalDate);
+    return s.RenewalDate && (d - new Date()) < 30 * 86400000;
+  }).length, [software]);
 
   async function handleSave() {
     setSaving(true);
     try {
+      const api = makeApi(vendorParam);
       if (subTab === 'software') { const r = await api.createITSoftware(formSW); setSoftware(p => [...p, r]); setFormSW(EMPTY_SW); }
       else { const r = await api.createITHardware(formHW); setHardware(p => [...p, r]); setFormHW(EMPTY_HW); }
       setShowModal(false);
@@ -242,8 +252,8 @@ function ITPulse({ api }) {
   return (
     <div>
       <div className="cards-row" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
-        <div className="card"><div className="card-label">Software Entries</div><div className="card-value">{software.length}</div></div>
-        <div className="card"><div className="card-label">Hardware Entries</div><div className="card-value">{hardware.length}</div></div>
+        <div className="card"><div className="card-label">Software</div><div className="card-value">{software.length}</div></div>
+        <div className="card"><div className="card-label">Hardware</div><div className="card-value">{hardware.length}</div></div>
         <div className="card"><div className="card-label">Renewing Soon</div><div className={`card-value${expiringSoon > 0 ? ' amber' : ' green'}`}>{expiringSoon}</div><div className="card-footer">within 30 days</div></div>
       </div>
       <div className="table-toolbar">
@@ -291,12 +301,8 @@ function ITPulse({ api }) {
   );
 }
 
-// ── Main Pulse Page ───────────────────────────────────────
 export default function Pulse() {
-  const { vendorParam, isVendor, user } = useAuth();
-  const api = makeApi(vendorParam);
-
-  // For vendor users, lock the tab to their category
+  const { isVendor, user } = useAuth();
   const defaultVendor = isVendor
     ? (user?.vendorCategory === 'Food' ? 'food' : user?.vendorCategory === 'IT' ? 'it' : 'transport')
     : 'transport';
@@ -310,24 +316,22 @@ export default function Pulse() {
           <div className="page-subtitle">{isVendor ? `Logging data for ${user?.vendorName}` : 'Dynamic activity data by vendor type'}</div>
         </div>
       </div>
-      {/* Only show vendor type tabs to admin */}
-      {!isVendor && (
+      {isVendor ? (
+        <div style={{ marginBottom: 20 }}>
+          <span className="vendor-tab active" style={{ cursor: 'default' }}>
+            {user?.vendorCategory === 'Transport' ? '🚕' : user?.vendorCategory === 'Food' ? '🥗' : '💻'} {user?.vendorCategory}
+          </span>
+        </div>
+      ) : (
         <div className="vendor-tabs">
           <button className={`vendor-tab${vendor === 'transport' ? ' active' : ''}`} onClick={() => setVendor('transport')}>🚕 Transport</button>
           <button className={`vendor-tab${vendor === 'food' ? ' active' : ''}`} onClick={() => setVendor('food')}>🥗 Food</button>
           <button className={`vendor-tab${vendor === 'it' ? ' active' : ''}`} onClick={() => setVendor('it')}>💻 IT</button>
         </div>
       )}
-      {isVendor && (
-        <div style={{ marginBottom: 20 }}>
-          <span className={`vendor-tab active`} style={{ cursor: 'default' }}>
-            {user?.vendorCategory === 'Transport' ? '🚕' : user?.vendorCategory === 'Food' ? '🥗' : '💻'} {user?.vendorCategory}
-          </span>
-        </div>
-      )}
-      {vendor === 'transport' && <TransportPulse api={api} />}
-      {vendor === 'food' && <FoodPulse api={api} user={user} />}
-      {vendor === 'it' && <ITPulse api={api} />}
+      {vendor === 'transport' && <TransportPulse />}
+      {vendor === 'food' && <FoodPulse />}
+      {vendor === 'it' && <ITPulse />}
     </div>
   );
 }
