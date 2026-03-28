@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
-import { api } from '../api';
+import { makeApi } from '../api';
+import { useAuth } from '../context/AuthContext';
 
 function riskBadge(v) {
   const map = { High: 'badge badge-red', Medium: 'badge badge-amber', Low: 'badge badge-green' };
@@ -35,13 +36,13 @@ const EMPTY_FORM = {
 };
 
 export default function Issues() {
+  const { vendorParam, isAdmin, user } = useAuth();
+  const api = makeApi(vendorParam);
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
-
-  // Filters
   const [filterRisk, setFilterRisk] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCat, setFilterCat] = useState('');
@@ -49,7 +50,7 @@ export default function Issues() {
 
   useEffect(() => {
     api.getIssues().then(setIssues).catch(console.error).finally(() => setLoading(false));
-  }, []);
+  }, [vendorParam]);
 
   const filtered = useMemo(() => {
     return issues.filter(i => {
@@ -72,21 +73,46 @@ export default function Issues() {
       setIssues(prev => [...prev, created]);
       setShowModal(false);
       setForm(EMPTY_FORM);
-    } catch (e) {
+    } catch {
       alert('Failed to save issue.');
     } finally {
       setSaving(false);
     }
   }
 
+  const openCount = issues.filter(i => i.Status === 'Open').length;
+  const highRiskCount = issues.filter(i => i.RiskLevel === 'High' && i.Status !== 'Resolved').length;
+
   return (
     <div>
       <div className="page-header">
         <div>
-          <div className="page-title">Issues</div>
-          <div className="page-subtitle">Compliance tickets and risk alerts</div>
+          <div className="page-title">{isAdmin ? 'Compliance Issues' : 'My Issues'}</div>
+          <div className="page-subtitle">
+            {openCount} open · {highRiskCount} high risk
+            {!isAdmin && ` · ${user?.vendorName}`}
+          </div>
         </div>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>+ Add Issue</button>
+        {isAdmin && (
+          <button className="btn-primary" onClick={() => { setForm({ ...EMPTY_FORM, VendorID: '' }); setShowModal(true); }}>
+            + Raise Issue
+          </button>
+        )}
+      </div>
+
+      {/* Summary badges */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        {[
+          { label: 'Open', count: issues.filter(i => i.Status === 'Open').length, cls: 'badge badge-red' },
+          { label: 'In Progress', count: issues.filter(i => i.Status === 'In-Progress').length, cls: 'badge badge-amber' },
+          { label: 'Resolved', count: issues.filter(i => i.Status === 'Resolved').length, cls: 'badge badge-green' },
+          { label: 'High Risk', count: issues.filter(i => i.RiskLevel === 'High').length, cls: 'badge badge-red' },
+        ].map(({ label, count, cls }) => (
+          <div key={label} className="card" style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
+            <span className={cls}>{count}</span>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{label}</span>
+          </div>
+        ))}
       </div>
 
       <div className="table-toolbar">
@@ -114,7 +140,7 @@ export default function Issues() {
       }
 
       {showModal && (
-        <Modal title="Add Issue" onClose={() => setShowModal(false)} onSave={handleSave} saving={saving}>
+        <Modal title="Raise Issue" onClose={() => setShowModal(false)} onSave={handleSave} saving={saving}>
           <div className="form-grid">
             <div className="form-group">
               <label className="form-label">Vendor ID <span className="req">*</span></label>

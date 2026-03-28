@@ -11,6 +11,34 @@ const DATA_DIR = path.join(__dirname, 'data');
 app.use(cors());
 app.use(express.json());
 
+// ── Demo Accounts (auth) ──────────────────────────────────
+const DEMO_USERS = [
+  { email: 'admin@vendorsecure.com', password: 'Admin@123', name: 'Kriti Sharma', role: 'admin', vendorId: null, vendorName: null, vendorCategory: null, department: 'Operations', avatarInitials: 'KS' },
+  { email: 'ops@swiftcabs.com',      password: 'Swift@123', name: 'Ramesh Kumar',  role: 'vendor', vendorId: 'V001', vendorName: 'SwiftCabs Pvt Ltd',     vendorCategory: 'Transport', department: 'Operations', avatarInitials: 'RK' },
+  { email: 'ops@cityride.com',        password: 'City@123',  name: 'Sunita Rao',    role: 'vendor', vendorId: 'V002', vendorName: 'CityRide Solutions',      vendorCategory: 'Transport', department: 'Operations', avatarInitials: 'SR' },
+  { email: 'ops@greenleaf.com',       password: 'Green@123', name: 'Priya Mehta',   role: 'vendor', vendorId: 'V003', vendorName: 'GreenLeaf Catering',      vendorCategory: 'Food',      department: 'Operations', avatarInitials: 'PM' },
+  { email: 'helpdesk@techcore.com',   password: 'Tech@123',  name: 'Ananya Sharma', role: 'vendor', vendorId: 'V005', vendorName: 'TechCore Systems',        vendorCategory: 'IT',        department: 'IT Support', avatarInitials: 'AS' },
+];
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  const user = DEMO_USERS.find(u => u.email === email && u.password === password);
+  if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
+  const { password: _, ...safeUser } = user;
+  res.json({ user: safeUser });
+});
+
+app.get('/api/auth/accounts', (req, res) => {
+  res.json(DEMO_USERS.map(({ password: _, ...u }) => u));
+});
+
+// Helper: filter by vendorId query param
+function filterByVendor(data, req) {
+  const { vendorId } = req.query;
+  if (!vendorId) return data;
+  return data.filter(r => r.VendorID === vendorId);
+}
+
 // Helper: read a CSV file and return array of objects
 function readCSV(filename) {
   return new Promise((resolve, reject) => {
@@ -41,7 +69,7 @@ function appendCSV(filename, row) {
 // ── Vendors ──────────────────────────────────────────────
 app.get('/api/vendors', async (req, res) => {
   const data = await readCSV('vendors.csv');
-  res.json(data);
+  res.json(filterByVendor(data, req));
 });
 
 app.get('/api/vendors/:id', async (req, res) => {
@@ -53,13 +81,13 @@ app.get('/api/vendors/:id', async (req, res) => {
 // ── Finance ───────────────────────────────────────────────
 app.get('/api/finance', async (req, res) => {
   const data = await readCSV('finance_ledger.csv');
-  res.json(data);
+  res.json(filterByVendor(data, req));
 });
 
 // ── Issues (Compliance Tickets) ───────────────────────────
 app.get('/api/issues', async (req, res) => {
   const data = await readCSV('compliance_tickets.csv');
-  res.json(data);
+  res.json(filterByVendor(data, req));
 });
 
 app.post('/api/issues', async (req, res) => {
@@ -86,7 +114,7 @@ app.patch('/api/issues/:id', async (req, res) => {
 // ── Transport: Cars ───────────────────────────────────────
 app.get('/api/transport/cars', async (req, res) => {
   const data = await readCSV('transport_cars.csv');
-  res.json(data);
+  res.json(filterByVendor(data, req));
 });
 
 app.post('/api/transport/cars', async (req, res) => {
@@ -98,7 +126,7 @@ app.post('/api/transport/cars', async (req, res) => {
 // ── Transport: Drivers ────────────────────────────────────
 app.get('/api/transport/drivers', async (req, res) => {
   const data = await readCSV('transport_drivers.csv');
-  res.json(data);
+  res.json(filterByVendor(data, req));
 });
 
 app.post('/api/transport/drivers', async (req, res) => {
@@ -109,8 +137,11 @@ app.post('/api/transport/drivers', async (req, res) => {
 
 // ── Transport: Trip Logs ──────────────────────────────────
 app.get('/api/transport/trips', async (req, res) => {
-  const data = await readCSV('transport_trip_logs.csv');
-  res.json(data);
+  const [trips, cars] = await Promise.all([readCSV('transport_trip_logs.csv'), readCSV('transport_cars.csv')]);
+  const { vendorId } = req.query;
+  if (!vendorId) return res.json(trips);
+  const vendorCars = new Set(cars.filter(c => c.VendorID === vendorId).map(c => c.CarID));
+  res.json(trips.filter(t => vendorCars.has(t.CarID)));
 });
 
 app.post('/api/transport/trips', async (req, res) => {
@@ -130,7 +161,7 @@ app.get('/api/food/details', async (req, res) => {
 // ── Food: Staff ───────────────────────────────────────────
 app.get('/api/food/staff', async (req, res) => {
   const data = await readCSV('food_staff.csv');
-  res.json(data);
+  res.json(filterByVendor(data, req));
 });
 
 app.post('/api/food/staff', async (req, res) => {
@@ -144,7 +175,7 @@ app.post('/api/food/staff', async (req, res) => {
 // ── Food: Item Catalog ────────────────────────────────────
 app.get('/api/food/catalog', async (req, res) => {
   const data = await readCSV('food_item_catalog.csv');
-  res.json(data);
+  res.json(filterByVendor(data, req));
 });
 
 app.post('/api/food/catalog', async (req, res) => {
@@ -158,7 +189,7 @@ app.post('/api/food/catalog', async (req, res) => {
 // ── Food: Daily Service ───────────────────────────────────
 app.get('/api/food/services', async (req, res) => {
   const data = await readCSV('food_daily_service.csv');
-  res.json(data);
+  res.json(filterByVendor(data, req));
 });
 
 app.post('/api/food/services', async (req, res) => {
@@ -172,7 +203,7 @@ app.post('/api/food/services', async (req, res) => {
 // ── IT: Asset Master ──────────────────────────────────────
 app.get('/api/it/assets', async (req, res) => {
   const data = await readCSV('it_asset_master.csv');
-  res.json(data);
+  res.json(filterByVendor(data, req));
 });
 
 app.post('/api/it/assets', async (req, res) => {
@@ -185,8 +216,11 @@ app.post('/api/it/assets', async (req, res) => {
 
 // ── IT: Software Details ──────────────────────────────────
 app.get('/api/it/software', async (req, res) => {
-  const data = await readCSV('it_software_details.csv');
-  res.json(data);
+  const { vendorId } = req.query;
+  const [sw, assets] = await Promise.all([readCSV('it_software_details.csv'), readCSV('it_asset_master.csv')]);
+  if (!vendorId) return res.json(sw);
+  const vendorAssets = new Set(assets.filter(a => a.VendorID === vendorId).map(a => a.AssetID));
+  res.json(sw.filter(s => vendorAssets.has(s.AssetID)));
 });
 
 app.post('/api/it/software', async (req, res) => {
@@ -197,8 +231,11 @@ app.post('/api/it/software', async (req, res) => {
 
 // ── IT: Hardware Details ──────────────────────────────────
 app.get('/api/it/hardware', async (req, res) => {
-  const data = await readCSV('it_hardware_details.csv');
-  res.json(data);
+  const { vendorId } = req.query;
+  const [hw, assets] = await Promise.all([readCSV('it_hardware_details.csv'), readCSV('it_asset_master.csv')]);
+  if (!vendorId) return res.json(hw);
+  const vendorAssets = new Set(assets.filter(a => a.VendorID === vendorId).map(a => a.AssetID));
+  res.json(hw.filter(h => vendorAssets.has(h.AssetID)));
 });
 
 app.post('/api/it/hardware', async (req, res) => {
@@ -209,13 +246,23 @@ app.post('/api/it/hardware', async (req, res) => {
 
 // ── Dashboard summary ─────────────────────────────────────
 app.get('/api/dashboard', async (req, res) => {
-  const [vendors, issues, finance, trips, services] = await Promise.all([
+  const { vendorId } = req.query;
+  const [allVendors, allIssues, allFinance, allTrips, allCars, allServices] = await Promise.all([
     readCSV('vendors.csv'),
     readCSV('compliance_tickets.csv'),
     readCSV('finance_ledger.csv'),
     readCSV('transport_trip_logs.csv'),
+    readCSV('transport_cars.csv'),
     readCSV('food_daily_service.csv'),
   ]);
+
+  // Filter by vendor if provided
+  const vendors  = vendorId ? allVendors.filter(v => v.VendorID === vendorId) : allVendors;
+  const issues   = vendorId ? allIssues.filter(i => i.VendorID === vendorId) : allIssues;
+  const finance  = vendorId ? allFinance.filter(f => f.VendorID === vendorId) : allFinance;
+  const services = vendorId ? allServices.filter(s => s.VendorID === vendorId) : allServices;
+  const vendorCars = vendorId ? new Set(allCars.filter(c => c.VendorID === vendorId).map(c => c.CarID)) : null;
+  const trips = vendorId ? allTrips.filter(t => vendorCars.has(t.CarID)) : allTrips;
 
   const openIssues = issues.filter(i => i.Status !== 'Resolved');
   const pendingInvoices = finance.filter(f => f.PaymentStatus === 'Pending' || f.PaymentStatus === 'Partial');

@@ -4,7 +4,8 @@
       "Bash(npm install:*)",
       "Bash(npm create:*)",
       "Bash(curl -s http://localhost:5000/api/dashboard)",
-      "Bash(curl -s http://localhost:3000)"
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(npx vite:*)"
     ]
   }
 }
