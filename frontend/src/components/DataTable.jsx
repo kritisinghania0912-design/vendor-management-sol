@@ -1,11 +1,15 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 
 const PAGE_SIZE = 10;
 
-export default function DataTable({ columns, data, onRowAction }) {
+export default function DataTable({
+  columns, data, onRowAction, onRowClick,
+  selectable, rowKey, selectedKeys = new Set(), onSelectionChange,
+}) {
   const [sortCol, setSortCol] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
   const [page, setPage] = useState(1);
+  const selectAllRef = useRef(null);
 
   useEffect(() => setPage(1), [data]);
 
@@ -36,11 +40,47 @@ export default function DataTable({ columns, data, onRowAction }) {
     setPage(1);
   }
 
+  // Selection helpers
+  const pageKeys = selectable && rowKey ? pageData.map(row => String(row[rowKey])) : [];
+  const allPageSelected = pageKeys.length > 0 && pageKeys.every(k => selectedKeys.has(k));
+  const somePageSelected = pageKeys.some(k => selectedKeys.has(k)) && !allPageSelected;
+
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = somePageSelected;
+  }, [somePageSelected]);
+
+  function toggleAll() {
+    const next = new Set(selectedKeys);
+    if (allPageSelected) pageKeys.forEach(k => next.delete(k));
+    else pageKeys.forEach(k => next.add(k));
+    onSelectionChange?.(next);
+  }
+
+  function toggleRow(key) {
+    const next = new Set(selectedKeys);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onSelectionChange?.(next);
+  }
+
+  const colCount = columns.length + (selectable ? 1 : 0) + (onRowAction ? 1 : 0);
+
   return (
     <div className="table-wrap">
       <table>
         <thead>
           <tr>
+            {selectable && (
+              <th style={{ width: 40, cursor: 'default' }}>
+                <input
+                  ref={selectAllRef}
+                  type="checkbox"
+                  checked={allPageSelected}
+                  onChange={toggleAll}
+                  aria-label="Select all rows on this page"
+                />
+              </th>
+            )}
             {columns.map(col => (
               <th
                 key={col.key}
@@ -60,32 +100,54 @@ export default function DataTable({ columns, data, onRowAction }) {
         <tbody>
           {pageData.length === 0 ? (
             <tr>
-              <td colSpan={columns.length + (onRowAction ? 1 : 0)} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+              <td colSpan={colCount} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                 No records found
               </td>
             </tr>
-          ) : pageData.map((row, i) => (
-            <tr key={i}>
-              {columns.map(col => (
-                <td key={col.key} title={row[col.key]}>
-                  {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
-                </td>
-              ))}
-              {onRowAction && (
-                <td>
-                  <div className="action-btns">
-                    <button className="action-btn" onClick={() => onRowAction('view', row)}>View</button>
-                    <button className="action-btn" onClick={() => onRowAction('edit', row)}>Edit</button>
-                  </div>
-                </td>
-              )}
-            </tr>
-          ))}
+          ) : pageData.map((row, i) => {
+            const key = rowKey ? String(row[rowKey]) : String(i);
+            const isSelected = selectable && selectedKeys.has(key);
+            return (
+              <tr
+                key={i}
+                className={isSelected ? 'row-selected' : ''}
+                onClick={() => onRowClick?.(row)}
+                style={onRowClick ? { cursor: 'pointer' } : {}}
+              >
+                {selectable && (
+                  <td onClick={e => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleRow(key)}
+                      aria-label="Select row"
+                    />
+                  </td>
+                )}
+                {columns.map(col => (
+                  <td key={col.key} title={typeof row[col.key] === 'string' ? row[col.key] : undefined}>
+                    {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
+                  </td>
+                ))}
+                {onRowAction && (
+                  <td>
+                    <div className="action-btns">
+                      <button className="action-btn" onClick={e => { e.stopPropagation(); onRowAction('view', row); }}>View</button>
+                      <button className="action-btn" onClick={e => { e.stopPropagation(); onRowAction('edit', row); }}>Edit</button>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       <div className="pagination-bar">
         <span>
           Showing {pageData.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, sorted.length)} of {sorted.length} entries
+          {selectable && selectedKeys.size > 0 && (
+            <span style={{ marginLeft: 12, color: 'var(--blue)', fontWeight: 600 }}>{selectedKeys.size} selected</span>
+          )}
         </span>
         <div className="pagination-pages">
           <button className="page-btn" onClick={() => setPage(p => p - 1)} disabled={page === 1}>‹</button>

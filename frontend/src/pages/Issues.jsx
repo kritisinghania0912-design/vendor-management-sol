@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
+import Drawer from '../components/Drawer';
 import { TableSkeleton } from '../components/Skeleton';
 import { makeApi } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -23,9 +25,12 @@ const EMPTY_FORM = {
   Category: 'Expiry', Description: '', ActionTaken: '', Status: 'Open',
 };
 
+const STATUS_OPTIONS = ['Open', 'In-Progress', 'Resolved'];
+
 export default function Issues() {
   const { vendorParam, isAdmin, user } = useAuth();
   const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -35,6 +40,9 @@ export default function Issues() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCat, setFilterCat] = useState('');
   const [search, setSearch] = useState('');
+  const [selectedKeys, setSelectedKeys] = useState(new Set());
+
+  const selectedTicketId = searchParams.get('ticket');
 
   useEffect(() => {
     const api = makeApi(vendorParam);
@@ -43,10 +51,10 @@ export default function Issues() {
   }, [vendorParam]);
 
   const stats = useMemo(() => ({
-    open: issues.filter(i => i.Status === 'Open').length,
+    open:       issues.filter(i => i.Status === 'Open').length,
     inProgress: issues.filter(i => i.Status === 'In-Progress').length,
-    resolved: issues.filter(i => i.Status === 'Resolved').length,
-    highRisk: issues.filter(i => i.RiskLevel === 'High').length,
+    resolved:   issues.filter(i => i.Status === 'Resolved').length,
+    highRisk:   issues.filter(i => i.RiskLevel === 'High').length,
   }), [issues]);
 
   const filtered = useMemo(() => issues.filter(i => {
@@ -59,6 +67,8 @@ export default function Issues() {
     }
     return true;
   }), [issues, filterRisk, filterStatus, filterCat, search]);
+
+  const selectedTicket = issues.find(i => i.TicketID === selectedTicketId);
 
   async function handleSave() {
     if (!form.VendorID || !form.Description) {
@@ -80,6 +90,44 @@ export default function Issues() {
     }
   }
 
+  // Optimistic status update — reverts on failure
+  async function handleStatusChange(ticketId, newStatus) {
+    const snapshot = issues;
+    setIssues(prev => prev.map(i => i.TicketID === ticketId ? { ...i, Status: newStatus } : i));
+    try {
+      const api = makeApi(vendorParam);
+      await api.updateIssue(ticketId, { Status: newStatus });
+      toast('Status updated.', 'success');
+    } catch {
+      setIssues(snapshot);
+      toast('Failed to update status.', 'error');
+    }
+  }
+
+  // Batch resolve — optimistic, reverts on any failure
+  async function handleBatchResolve() {
+    const keys = [...selectedKeys];
+    const snapshot = issues;
+    setIssues(prev => prev.map(i => keys.includes(i.TicketID) ? { ...i, Status: 'Resolved' } : i));
+    setSelectedKeys(new Set());
+    try {
+      const api = makeApi(vendorParam);
+      await Promise.all(keys.map(id => api.updateIssue(id, { Status: 'Resolved' })));
+      toast(`${keys.length} issue${keys.length > 1 ? 's' : ''} resolved.`, 'success');
+    } catch {
+      setIssues(snapshot);
+      toast('Batch update failed. Changes reverted.', 'error');
+    }
+  }
+
+  function openTicket(row) {
+    setSearchParams({ ticket: row.TicketID });
+  }
+
+  function closeDrawer() {
+    setSearchParams({});
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -99,10 +147,10 @@ export default function Issues() {
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
         {[
-          { label: 'Open', count: stats.open, cls: 'badge badge-red' },
+          { label: 'Open',        count: stats.open,       cls: 'badge badge-red' },
           { label: 'In Progress', count: stats.inProgress, cls: 'badge badge-amber' },
-          { label: 'Resolved', count: stats.resolved, cls: 'badge badge-green' },
-          { label: 'High Risk', count: stats.highRisk, cls: 'badge badge-red' },
+          { label: 'Resolved',    count: stats.resolved,   cls: 'badge badge-green' },
+          { label: 'High Risk',   count: stats.highRisk,   cls: 'badge badge-red' },
         ].map(({ label, count, cls }) => (
           <div key={label} className="card" style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
             <span className={cls}>{count}</span>
@@ -138,7 +186,85 @@ export default function Issues() {
         </div>
       </div>
 
-      {loading ? <TableSkeleton cols={8} rows={6} /> : <DataTable columns={COLUMNS} data={filtered} />}
+      {loading ? <TableSkeleton cols={8} rows={6} /> : (
+        <DataTable
+          columns={COLUMNS}
+          data={filtered}
+          onRowClick={openTicket}
+          selectable={isAdmin}
+          rowKey="TicketID"
+          selectedKeys={selectedKeys}
+          onSelectionChange={setSelectedKeys}
+        />
+      )}
+
+      {/* Batch action bar */}
+      {selectedKeys.size > 0 && (
+        <div className="batch-bar" role="toolbar" aria-label="Batch actions">
+          <span className="batch-bar-count">{selectedKeys.size} selected</span>
+          <div className="batch-bar-divider" />
+          <button className="batch-bar-btn" onClick={handleBatchResolve}>
+            ✓ Mark Resolved
+          </button>
+          <button className="batch-bar-btn secondary" onClick={() => setSelectedKeys(new Set())}>
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* Ticket side-peek drawer */}
+      <Drawer
+        isOpen={!!selectedTicket}
+        onClose={closeDrawer}
+        title={selectedTicket ? `${selectedTicket.TicketID} — ${selectedTicket.Category}` : ''}
+        subtitle={selectedTicket ? `${selectedTicket.VendorID} · Reported ${selectedTicket.ReportDate}` : ''}
+      >
+        {selectedTicket && (
+          <div className="drawer-section">
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              {riskBadge(selectedTicket.RiskLevel)}
+              {priorityBadge(selectedTicket.Priority)}
+              {statusBadge(selectedTicket.Status)}
+            </div>
+
+            <div className="drawer-fields" style={{ marginBottom: 20 }}>
+              <div className="drawer-field">
+                <span className="drawer-field-label">Description</span>
+                <span className="drawer-field-value" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                  {selectedTicket.Description}
+                </span>
+              </div>
+              {selectedTicket.ActionTaken && (
+                <div className="drawer-field">
+                  <span className="drawer-field-label">Action Taken</span>
+                  <span className="drawer-field-value" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                    {selectedTicket.ActionTaken}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {isAdmin && (
+              <div>
+                <div className="drawer-field-label" style={{ marginBottom: 8 }}>Update Status</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {STATUS_OPTIONS.map(s => (
+                    <button
+                      key={s}
+                      className={selectedTicket.Status === s ? 'btn-primary' : 'btn-secondary'}
+                      style={{ fontSize: 12.5, padding: '6px 14px' }}
+                      onClick={() => handleStatusChange(selectedTicket.TicketID, s)}
+                      disabled={selectedTicket.Status === s}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Drawer>
 
       {showModal && (
         <Modal title="Raise Issue" onClose={() => setShowModal(false)} onSave={handleSave} saving={saving}>

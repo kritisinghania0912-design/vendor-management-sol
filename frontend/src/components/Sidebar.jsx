@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 const ADMIN_NAV = [
   { to: '/',         label: 'Dashboard', icon: '▦' },
+  { to: '/vendors',  label: 'Vendors',   icon: '🏢' },
   { to: '/issues',   label: 'Issues',    icon: '⚠' },
   { to: '/pulse',    label: 'Pulse',     icon: '◉' },
   { to: '/registry', label: 'Registry',  icon: '☰' },
@@ -49,7 +50,7 @@ export default function Sidebar() {
 
       <div className="sidebar-footer">
         <div className="sidebar-footer-label">VendorSecure v1.0</div>
-        <div className="sidebar-footer-env">Demo Environment</div>
+        <div className="sidebar-footer-env">Demo · <kbd style={{ fontSize: 10, background: 'rgba(255,255,255,0.08)', padding: '1px 4px', borderRadius: 3 }}>⌘K</kbd> search</div>
       </div>
     </aside>
   );
