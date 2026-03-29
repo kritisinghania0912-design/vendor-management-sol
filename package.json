@@ -1,0 +1,24 @@
+{
+  "name": "vms2",
+  "version": "1.0.0",
+  "description": "A full-stack web application for managing vendors across Transport, Food, and IT categories. Supports role-based access for admins and individual vendors.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently --names \"backend,frontend\" --prefix-colors \"cyan,magenta\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kritisinghania0912-design/vendor-management-sol.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kritisinghania0912-design/vendor-management-sol/issues"
+  },
+  "homepage": "https://github.com/kritisinghania0912-design/vendor-management-sol#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
