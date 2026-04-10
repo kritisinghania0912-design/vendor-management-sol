@@ -639,3 +639,86 @@ td input[type="checkbox"], th input[type="checkbox"] {
   background: var(--white); border: 1px solid var(--border); border-radius: 4px;
   padding: 1px 5px; font-family: monospace; font-size: 10px; color: var(--text);
 }
+
+/* ── Dashboard chart ── */
+.dashboard-chart-wrap { margin-bottom: 24px; }
+
+.chart-card { padding: 20px 24px 16px; }
+
+.chart-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.chart-title-block { flex-shrink: 0; }
+.chart-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.chart-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.chart-controls {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
+}
+.chart-tabs { margin-bottom: 0; }
+
+/* Custom recharts tooltip */
+.chart-tooltip {
+  background: var(--white); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); min-width: 170px;
+}
+.chart-tooltip-label {
+  font-size: 11.5px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+}
+.chart-tooltip-row {
+  display: flex; align-items: center; gap: 7px; font-size: 13px;
+  color: var(--text); padding: 2px 0;
+}
+.chart-tooltip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.chart-tooltip-name { flex: 1; font-size: 12px; }
+.chart-tooltip-val { font-weight: 700; font-size: 13px; }
+
+/* ── Table sections ── */
+.table-section { display: flex; flex-direction: column; gap: 0; }
+
+.result-count {
+  margin-left: auto; font-size: 12px; color: var(--text-muted);
+  white-space: nowrap; padding: 7px 2px;
+}
+
+/* Clickable table rows */
+.clickable-row { cursor: pointer; }
+.clickable-row:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+
+/* Overdue row highlight */
+.overdue-row { background: #fff8f8 !important; }
+.overdue-row:hover { background: #fff0f0 !important; }
+.overdue-pill { margin-left: 6px; font-size: 10px; padding: 1px 6px; vertical-align: middle; }
+
+/* Mono IDs */
+.mono-id {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 12px; color: var(--text-muted); letter-spacing: 0.02em;
+}
+
+/* Invoice toolbar date inputs */
+.inv-toolbar { flex-wrap: wrap; }
+.date-range-group { display: flex; align-items: center; gap: 4px; }
+.date-sep { font-size: 12px; color: var(--text-muted); }
+.date-input { min-width: 130px; }
+.period-cell { font-size: 12px; white-space: nowrap; }
+
+/* Empty row */
+.empty-row {
+  text-align: center; padding: 28px 16px !important;
+  color: var(--text-muted); font-size: 13px;
+}
+
+/* Responsive: stack two-col on narrow screens */
+@media (max-width: 900px) {
+  .cards-row { grid-template-columns: repeat(2, 1fr); }
+  .two-col { grid-template-columns: 1fr; }
+  .chart-header { flex-direction: column; align-items: flex-start; }
+  .chart-controls { justify-content: flex-start; }
+}
+@media (max-width: 540px) {
+  .cards-row { grid-template-columns: 1fr 1fr; }
+  .chart-tabs .tab-btn { padding: 5px 10px; font-size: 12px; }
+}
